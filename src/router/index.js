@@ -2,6 +2,10 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import PropertyMapView from '../views/PropertyMapView.vue'
 import GameBoardView from '../views/GameBoardView.vue'
+import GameView from '../views/GameView.vue'
+import CreateGameView from '../views/CreateGameView.vue'
+import JoinGameView from '../views/JoinGameView.vue'
+import LobbyView from '../views/LobbyView.vue'
 
 const routes = [
   {
@@ -10,14 +14,34 @@ const routes = [
     component: HomeView
   },
   {
-    path: '/properties',
-    name: 'properties',
-    component: PropertyMapView
+    path: '/create-game',
+    name: 'create-game',
+    component: CreateGameView
+  },
+  {
+    path: '/join-game',
+    name: 'join-game',
+    component: JoinGameView
+  },
+  {
+    path: '/lobby/:gameId',
+    name: 'lobby',
+    component: LobbyView
+  },
+  {
+    path: '/board/:gameId',
+    name: 'board',
+    component: GameView
   },
   {
     path: '/board',
-    name: 'board',
+    name: 'demo-board',
     component: GameBoardView
+  },
+  {
+    path: '/properties',
+    name: 'properties',
+    component: PropertyMapView
   },
   {
     path: '/about',

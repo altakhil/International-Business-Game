@@ -1,6 +1,6 @@
 <template>
   <div class="game-board">
-    <div class="board-container">
+    <div class="board-container" ref="boardContainer" :style="{ transform: `scale(${scale})` }">
       <!-- Top Row (Left to Right) -->
       <div class="board-row top-row">
         <BoardSpace 
@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps } from 'vue'
+import { computed, defineProps, onMounted, onUnmounted, ref } from 'vue'
 import BoardSpace from './BoardSpace.vue'
 
 const props = defineProps({
@@ -101,99 +101,56 @@ const leftColumn = computed(() => {
   return props.boardSpaces.filter(space => space.position >= 28 && space.position <= 35).reverse()
 })
 
-// Dummy data for testing
-const dummyOwnership = computed(() => {
-  const ownership = {}
-  // Top row properties
-  ownership[1] = { houses_built: 1, has_hotel: false }
-  ownership[2] = { houses_built: 2, has_hotel: false }
-  ownership[3] = { houses_built: 3, has_hotel: false }
-  ownership[4] = { houses_built: 3, has_hotel: true }
-  ownership[5] = { houses_built: 1, has_hotel: false }
-  ownership[6] = { houses_built: 2, has_hotel: false }
-  ownership[7] = { houses_built: 3, has_hotel: false }
-  ownership[8] = { houses_built: 3, has_hotel: true }
-  
-  // Right column properties
-  ownership[10] = { houses_built: 1, has_hotel: false }
-  ownership[11] = { houses_built: 2, has_hotel: false }
-  ownership[12] = { houses_built: 3, has_hotel: false }
-  ownership[13] = { houses_built: 3, has_hotel: true }
-  ownership[14] = { houses_built: 1, has_hotel: false }
-  ownership[15] = { houses_built: 2, has_hotel: false }
-  ownership[16] = { houses_built: 3, has_hotel: false }
-  ownership[17] = { houses_built: 3, has_hotel: true }
-  
-  // Bottom row properties
-  ownership[19] = { houses_built: 1, has_hotel: false }
-  ownership[20] = { houses_built: 2, has_hotel: false }
-  ownership[21] = { houses_built: 3, has_hotel: false }
-  ownership[22] = { houses_built: 3, has_hotel: true }
-  ownership[23] = { houses_built: 1, has_hotel: false }
-  ownership[24] = { houses_built: 2, has_hotel: false }
-  ownership[25] = { houses_built: 3, has_hotel: false }
-  ownership[26] = { houses_built: 3, has_hotel: true }
-  
-  // Left column properties
-  ownership[28] = { houses_built: 1, has_hotel: false }
-  ownership[29] = { houses_built: 2, has_hotel: false }
-  ownership[30] = { houses_built: 3, has_hotel: false }
-  ownership[31] = { houses_built: 3, has_hotel: true }
-  ownership[32] = { houses_built: 1, has_hotel: false }
-  ownership[33] = { houses_built: 2, has_hotel: false }
-  ownership[34] = { houses_built: 3, has_hotel: false }
-  ownership[35] = { houses_built: 3, has_hotel: true }
-  
-  return ownership
-})
-
-const dummyPlayers = computed(() => {
-  const players = {}
-  // Add players to various spaces
-  players[2] = [
-    { player_id: 1, player_name: 'Alice' },
-    { player_id: 2, player_name: 'Bob' }
-  ]
-  players[4] = [
-    { player_id: 3, player_name: 'Charlie' }
-  ]
-  players[6] = [
-    { player_id: 1, player_name: 'Alice' },
-    { player_id: 4, player_name: 'Diana' }
-  ]
-  players[11] = [
-    { player_id: 2, player_name: 'Bob' },
-    { player_id: 3, player_name: 'Charlie' }
-  ]
-  players[15] = [
-    { player_id: 4, player_name: 'Diana' }
-  ]
-  players[19] = [
-    { player_id: 1, player_name: 'Alice' },
-    { player_id: 2, player_name: 'Bob' },
-    { player_id: 3, player_name: 'Charlie' }
-  ]
-  players[23] = [
-    { player_id: 4, player_name: 'Diana' }
-  ]
-  players[29] = [
-    { player_id: 1, player_name: 'Alice' },
-    { player_id: 2, player_name: 'Bob' }
-  ]
-  players[33] = [
-    { player_id: 3, player_name: 'Charlie' },
-    { player_id: 4, player_name: 'Diana' }
-  ]
-  return players
-})
 
 const getOwnershipForSpace = (position) => {
-  return dummyOwnership.value[position] || null
+  // Use real ownership data from props
+  const ownership = props.propertyOwnership.find(o => {
+    const space = props.boardSpaces.find(s => s.position === position)
+    return space && o.property_id === space.id
+  })
+  
+  if (!ownership) return null
+  
+  return {
+    houses_built: ownership.houses_count || 0,
+    has_hotel: ownership.has_hotel || false
+  }
 }
 
 const getPlayersForSpace = (position) => {
-  return dummyPlayers.value[position] || []
+  // Use real player data from props
+  return props.players.filter(p => p.position === position).map(p => ({
+    player_id: p.player_id,
+    player_name: p.name
+  }))
 }
+
+const boardContainer = ref(null)
+const scale = ref(1)
+
+const updateScale = () => {
+  if (!boardContainer.value) return
+  const parent = boardContainer.value.parentElement
+  if (!parent) return
+  
+  const containerWidth = parent.clientWidth - 40
+  const containerHeight = parent.clientHeight - 40
+  const boardWidth = boardContainer.value.scrollWidth
+  const boardHeight = boardContainer.value.scrollHeight
+  
+  const scaleX = containerWidth / boardWidth
+  const scaleY = containerHeight / boardHeight
+  scale.value = Math.min(scaleX, scaleY, 1)
+}
+
+onMounted(() => {
+  setTimeout(updateScale, 100)
+  window.addEventListener('resize', updateScale)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScale)
+})
 </script>
 
 <style scoped>
@@ -201,9 +158,10 @@ const getPlayersForSpace = (position) => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40px;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  padding: 0;
 }
 
 .board-container {
@@ -212,8 +170,9 @@ const getPlayersForSpace = (position) => {
   gap: 2px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 5px;
+  transform-origin: center center;
+  flex-shrink: 0;
 }
 
 .board-row {
@@ -223,6 +182,7 @@ const getPlayersForSpace = (position) => {
 
 .top-row {
   flex-direction: row;
+  align-items: start;
 }
 
 .bottom-row {

@@ -325,3 +325,34 @@ CREATE POLICY "Players can view game events in their game" ON game_events
 ALTER TABLE board_spaces DISABLE ROW LEVEL SECURITY;
 ALTER TABLE properties DISABLE ROW LEVEL SECURITY;
 ALTER TABLE special_cards DISABLE ROW LEVEL SECURITY;
+
+-- ============================================
+-- REAL-TIME SUBSCRIPTION POLICIES
+-- ============================================
+-- Enable real-time for game tables
+ALTER PUBLICATION supabase_realtime ADD TABLE games;
+ALTER PUBLICATION supabase_realtime ADD TABLE players;
+ALTER PUBLICATION supabase_realtime ADD TABLE property_ownership;
+ALTER PUBLICATION supabase_realtime ADD TABLE transactions;
+ALTER PUBLICATION supabase_realtime ADD TABLE bidding_sessions;
+ALTER PUBLICATION supabase_realtime ADD TABLE bids;
+ALTER PUBLICATION supabase_realtime ADD TABLE game_events;
+
+-- Allow unauthenticated users to subscribe to real-time changes for development
+-- Note: In production, you should use proper authentication
+ALTER TABLE games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE property_ownership ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bidding_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bids ENABLE ROW LEVEL SECURITY;
+ALTER TABLE game_events ENABLE ROW LEVEL SECURITY;
+
+-- Real-time subscription policies for development (allow all for now)
+CREATE POLICY "Enable real-time for games" ON games FOR SELECT USING (true);
+CREATE POLICY "Enable real-time for players" ON players FOR SELECT USING (true);
+CREATE POLICY "Enable real-time for property_ownership" ON property_ownership FOR SELECT USING (true);
+CREATE POLICY "Enable real-time for transactions" ON transactions FOR SELECT USING (true);
+CREATE POLICY "Enable real-time for bidding_sessions" ON bidding_sessions FOR SELECT USING (true);
+CREATE POLICY "Enable real-time for bids" ON bids FOR SELECT USING (true);
+CREATE POLICY "Enable real-time for game_events" ON game_events FOR SELECT USING (true);

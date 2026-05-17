@@ -172,7 +172,7 @@ const getPlayerInitial = (name) => {
 }
 
 .space-name {
-  font-size: 10px;
+  font-size: 1.2em;
   line-height: 1.1;
   margin-bottom: 2px;
   text-transform: uppercase;
