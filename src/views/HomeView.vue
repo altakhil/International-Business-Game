@@ -1,12 +1,21 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-    <DatabaseTest />
+    <div class="hero-section">
+      <h1 class="hero-title">International Business</h1>
+      <p class="hero-subtitle">Roll the dice, buy properties, build your empire!</p>
+    </div>
     
-    <div class="navigation-section">
-      <router-link to="/properties" class="nav-button">
-        View All Properties Map
+    <div class="action-section">
+      <router-link to="/create-game" class="action-card create-game">
+        <div class="card-icon">🎮</div>
+        <h2 class="card-title">Host a Game</h2>
+        <p class="card-description">Create a new game lobby and invite friends to play</p>
+      </router-link>
+      
+      <router-link to="/join-game" class="action-card join-game">
+        <div class="card-icon">🎯</div>
+        <h2 class="card-title">Join a Game</h2>
+        <p class="card-description">Enter a join code to join an existing game</p>
       </router-link>
     </div>
     
