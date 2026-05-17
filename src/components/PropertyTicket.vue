@@ -266,10 +266,6 @@ const getPairedProperty = (name) => {
   border-color: #6b7280;
 }
 
-.white-ticket {
-  /* min-height: 560px; */
-}
-
 .ticket-header {
   display: flex;
   justify-content: space-between;

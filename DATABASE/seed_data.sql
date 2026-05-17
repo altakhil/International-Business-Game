@@ -14,7 +14,7 @@ INSERT INTO board_spaces (position, name, space_type, property_color, base_price
 
 -- Bottom Row (Right to Left): SINGAPORE, MALAYSIA, RAILWAYS, CHINA, PETROLEUM, SAUDI ARABIA, CHANCE, INDIA, JAIL
 (1, 'SINGAPORE', 'property', 'BLUE', 3000.00, 1500.00),
-(2, 'MALAYSIA', 'property', 'BLUE', 1500.00, 800.00),
+(2, 'MALAYSIA', 'property', 'GREEN', 1500.00, 800.00),
 (3, 'RAILWAYS', 'property', 'WHITE', 9500.00, 5000.00),
 (4, 'CHINA', 'property', 'BLUE', 4500.00, 2250.00),
 (5, 'PETROLEUM', 'property', 'WHITE', 5500.00, 1300.00),
@@ -26,34 +26,34 @@ INSERT INTO board_spaces (position, name, space_type, property_color, base_price
 -- Left Column (Bottom to Top): AUSTRALIA, UNO, HONGKONG, MEXICO, ROADWAYS, TRAVELLING DUTY, USA, JAPAN, PARTY HOUSE
 (10, 'AUSTRALIA', 'property', 'YELLOW', 3300.00, 2000.00),
 (11, 'UNO', 'uno', null, 0, 0),
-(12, 'HONGKONG', 'property', 'YELLOW', 2000.00, 1000.00),
+(12, 'HONGKONG', 'property', 'BLUE', 2000.00, 1000.00),
 (13, 'MEXICO', 'property', 'YELLOW', 4000.00, 2000.00),
 (14, 'ROADWAYS', 'property', 'WHITE', 3500.00, 1800.00),
 (15, 'TRAVELLING DUTY', 'travelling_duty', null, 0, 0),
 (16, 'USA', 'property', 'YELLOW', 8500.00, 5000.00),
-(17, 'JAPAN', 'property', 'YELLOW', 2500.00, 1250.00),
+(17, 'JAPAN', 'property', 'BLUE', 2500.00, 1250.00),
 (18, 'PARTY HOUSE', 'party_house', null, 0, 0),
 
 -- Top Row (Left to Right): ITALY, CHANCE, BRAZIL, SWITZERLAND, CUSTOM DUTY, AIRWAYS, GERMANY, CANADA, RESORT
 (19, 'ITALY', 'property', 'RED', 3500.00, 1000.00),
 (20, 'CHANCE', 'chance', null, 0, 0),
-(21, 'BRAZIL', 'property', 'RED', 2500.00, 1300.00),
+(21, 'BRAZIL', 'property', 'YELLOW', 2500.00, 1300.00),
 (22, 'SWITZERLAND', 'property', 'RED', 3500.00, 3300.00),
 (23, 'CUSTOM DUTY', 'custom', null, 0, 0),
 (24, 'AIRWAYS', 'property', 'WHITE', 10500.00, 5500.00),
 (25, 'GERMANY', 'property', 'RED', 3500.00, 1750.00),
-(26, 'CANADA', 'property', 'RED', 4000.00, 2000.00),
+(26, 'CANADA', 'property', 'YELLOW', 4000.00, 2000.00),
 (27, 'RESORT', 'resort', null, 0, 0),
 
 -- Right Column (Top to Bottom): EGYPT, SATELLITE, IRAN, FRANCE, UNO, WATERWAYS, IRAQ, ENGLAND, START (Collect $1500)
 (28, 'EGYPT', 'property', 'GREEN', 3200.00, 1500.00),
 (29, 'SATELLITE', 'property', 'WHITE', 2000.00, 1250.00),
 (30, 'IRAN', 'property', 'GREEN', 2500.00, 1250.00),
-(31, 'FRANCE', 'property', 'GREEN', 2500.00, 1250.00),
+(31, 'FRANCE', 'property', 'RED', 2500.00, 1250.00),
 (32, 'UNO', 'uno', null, 0, 0),
 (33, 'WATERWAYS', 'property', 'WHITE', 9500.00, 2000.00),
 (34, 'IRAQ', 'property', 'GREEN', 5000.00, 2500.00),
-(35, 'ENGLAND', 'property', 'GREEN', 2500.00, 3500.00);
+(35, 'ENGLAND', 'property', 'RED', 2500.00, 3500.00);
 
 -- ============================================
 -- PROPERTIES

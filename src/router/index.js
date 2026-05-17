@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import PropertyMapView from '../views/PropertyMapView.vue'
+import GameBoardView from '../views/GameBoardView.vue'
 
 const routes = [
   {
@@ -12,6 +13,11 @@ const routes = [
     path: '/properties',
     name: 'properties',
     component: PropertyMapView
+  },
+  {
+    path: '/board',
+    name: 'board',
+    component: GameBoardView
   },
   {
     path: '/about',

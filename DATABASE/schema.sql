@@ -247,6 +247,10 @@ ALTER TABLE bidding_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bids ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_events ENABLE ROW LEVEL SECURITY;
 
+-- Games: Authenticated users can create games
+CREATE POLICY "Authenticated users can create games" ON games
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
 -- Games: Players can read games they're in
 CREATE POLICY "Players can view games they're in" ON games
     FOR SELECT USING (
@@ -255,6 +259,14 @@ CREATE POLICY "Players can view games they're in" ON games
         )
     );
 
+-- Games: Host can update their game
+CREATE POLICY "Host can update game" ON games
+    FOR UPDATE USING (host_player_id = auth.uid());
+
+-- Players: Authenticated users can join games
+CREATE POLICY "Authenticated users can join games" ON players
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
 -- Players: Players can read all players in their game
 CREATE POLICY "Players can view players in same game" ON players
     FOR SELECT USING (
@@ -262,6 +274,10 @@ CREATE POLICY "Players can view players in same game" ON players
             SELECT game_id FROM players WHERE player_id = auth.uid()
         )
     );
+
+-- Players: Players can update their own player data
+CREATE POLICY "Players can update own data" ON players
+    FOR UPDATE USING (player_id = auth.uid());
 
 -- Property ownership: Readable by players in the same game
 CREATE POLICY "Players can view property ownership in their game" ON property_ownership
