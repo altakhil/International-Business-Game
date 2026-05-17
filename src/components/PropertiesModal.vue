@@ -14,19 +14,11 @@
             No unsold properties
           </div>
           <div v-else class="properties-grid">
-            <div 
+            <PropertyTicket 
               v-for="property in unsoldProperties" 
-              :key="property.id"
-              class="property-ticket"
-            >
-              <div class="ticket-header" :style="{ backgroundColor: property.color || '#ccc' }">
-                <div class="ticket-name">{{ property.name }}</div>
-              </div>
-              <div class="ticket-body">
-                <div class="ticket-price">${{ property.base_price || property.price || 0 }}</div>
-                <div class="ticket-type">{{ property.space_type }}</div>
-              </div>
-            </div>
+              :key="property.property_id"
+              :property="property"
+            />
           </div>
         </div>
 
@@ -37,22 +29,11 @@
             No properties
           </div>
           <div v-else class="properties-grid">
-            <div 
+            <PropertyTicket 
               v-for="ownership in getPlayerProperties(player.player_id)" 
               :key="ownership.ownership_id"
-              class="property-ticket owned"
-            >
-              <div class="ticket-header" :style="{ backgroundColor: getPropertyColor(ownership.property_id) }">
-                <div class="ticket-name">{{ getPropertyName(ownership.property_id) }}</div>
-              </div>
-              <div class="ticket-body">
-                <div class="ticket-price">${{ getPropertyPrice(ownership.property_id) }}</div>
-                <div class="ticket-details">
-                  <span v-if="ownership.houses_count > 0">🏠 {{ ownership.houses_count }}</span>
-                  <span v-if="ownership.has_hotel">🏨 Hotel</span>
-                </div>
-              </div>
-            </div>
+              :property="getPropertyDetails(ownership.property_id)"
+            />
           </div>
         </div>
       </div>
@@ -65,6 +46,7 @@
 import { computed } from 'vue'
 import { usePropertiesStore } from '@/stores/properties'
 import { useGameStore } from '@/stores/game'
+import PropertyTicket from '@/components/PropertyTicket.vue'
 
 const emit = defineEmits(['close'])
 
@@ -72,9 +54,9 @@ const propertiesStore = usePropertiesStore()
 const gameStore = useGameStore()
 
 const unsoldProperties = computed(() => {
-  const ownedPropertyIds = gameStore.propertyOwnership.map(o => o.property_id)
+  const ownedPropertyIds = new Set(gameStore.propertyOwnership.map(o => o.property_id))
   return propertiesStore.properties.filter(p => 
-    p.space_type === 'property' && !ownedPropertyIds.includes(p.id)
+    !ownedPropertyIds.has(p.property_id)
   )
 })
 
@@ -84,22 +66,34 @@ const playersWithProperties = computed(() => {
 })
 
 const getPlayerProperties = (playerId) => {
-  return gameStore.propertyOwnership.filter(o => o.player_id === playerId)
+  const properties = gameStore.propertyOwnership.filter(o => o.player_id === playerId)
+  // Deduplicate by property_id
+  const seen = new Set()
+  return properties.filter(p => {
+    if (seen.has(p.property_id)) return false
+    seen.add(p.property_id)
+    return true
+  })
 }
 
 const getPropertyColor = (propertyId) => {
-  const property = propertiesStore.properties.find(p => p.id === propertyId)
-  return property?.color || '#ccc'
+  const property = propertiesStore.properties.find(p => p.property_id === propertyId)
+  return property?.property_color || '#ccc'
 }
 
 const getPropertyName = (propertyId) => {
-  const property = propertiesStore.properties.find(p => p.id === propertyId)
-  return property?.name || 'Unknown'
+  const property = propertiesStore.properties.find(p => p.property_id === propertyId)
+  return property?.name || property?.board_spaces?.name || 'Unknown'
 }
 
 const getPropertyPrice = (propertyId) => {
-  const property = propertiesStore.properties.find(p => p.id === propertyId)
-  return (property?.base_price || property?.price || 0).toLocaleString()
+  const property = propertiesStore.properties.find(p => p.property_id === propertyId)
+  return (property?.base_price || 0).toLocaleString()
+}
+
+const getPropertyDetails = (propertyId) => {
+  const property = propertiesStore.properties.find(p => p.property_id === propertyId)
+  return property || {}
 }
 </script>
 
@@ -120,9 +114,9 @@ const getPropertyPrice = (propertyId) => {
 .modal-content {
   background: white;
   border-radius: 16px;
-  width: 90%;
-  max-width: 900px;
-  max-height: 85vh;
+  width: 95%;
+  max-width: 1200px;
+  max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -189,8 +183,9 @@ const getPropertyPrice = (propertyId) => {
 
 .properties-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+  justify-items: center;
 }
 
 .property-ticket {

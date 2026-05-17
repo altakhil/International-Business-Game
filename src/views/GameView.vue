@@ -128,6 +128,15 @@
       @close="showChanceModal = false"
       @resolve="handleChanceCard"
     />
+
+    <RentPaymentModal 
+      v-if="showRentModal"
+      :property="currentProperty"
+      :owner="rentOwner"
+      :ownership="rentOwnership"
+      :rentAmount="rentAmount"
+      @close="handleRentModalClose"
+    />
   </div>
 </template>
 
@@ -137,6 +146,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useGameStore } from '@/stores/game'
 import { useBoardSpacesStore } from '@/stores/boardSpaces'
 import { usePropertiesStore } from '@/stores/properties'
+import { storeToRefs } from 'pinia'
 import GameBoard from '@/components/GameBoard.vue'
 import DiceRoll from '@/components/DiceRoll.vue'
 import PropertiesModal from '@/components/PropertiesModal.vue'
@@ -144,6 +154,7 @@ import AuctionModal from '@/components/AuctionModal.vue'
 import MortgageModal from '@/components/MortgageModal.vue'
 import PropertyPurchaseModal from '@/components/PropertyPurchaseModal.vue'
 import ChanceCardModal from '@/components/ChanceCardModal.vue'
+import RentPaymentModal from '@/components/RentPaymentModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -151,7 +162,7 @@ const gameStore = useGameStore()
 const boardSpacesStore = useBoardSpacesStore()
 const propertiesStore = usePropertiesStore()
 
-const { boardSpaces } = boardSpacesStore
+const { boardSpaces } = storeToRefs(boardSpacesStore)
 
 // Modal states
 const showPropertiesModal = ref(false)
@@ -159,12 +170,16 @@ const showAuctionModal = ref(false)
 const showMortgageModal = ref(false)
 const showPurchaseModal = ref(false)
 const showChanceModal = ref(false)
+const showRentModal = ref(false)
 
 // Game state
 const isRolling = ref(false)
 const currentPlayerId = ref(null)
 const currentProperty = ref(null)
 const currentChanceCard = ref(null)
+const rentOwner = ref(null)
+const rentOwnership = ref(null)
+const rentAmount = ref(0)
 
 // Computed
 const currentPlayer = computed(() => gameStore.currentPlayer)
@@ -195,82 +210,206 @@ const formatMoney = (value) => {
 }
 
 const handleDiceRoll = async () => {
-  if (!isMyTurn.value || isRolling.value) return
+  console.log('=== DICE ROLL START ===')
+  console.log('isMyTurn:', isMyTurn.value)
+  console.log('isRolling:', isRolling.value)
+  console.log('myPlayer:', myPlayer.value)
+  
+  if (!isMyTurn.value || isRolling.value) {
+    console.log('Cannot roll - not my turn or already rolling')
+    return
+  }
   
   isRolling.value = true
   
   // Generate random dice roll (1-6)
   const roll = Math.floor(Math.random() * 6) + 1
+  console.log('Dice roll:', roll)
   
   await gameStore.setCurrentDiceRoll(roll)
   
   // Move player with circular movement (0-35, wraps around)
   const player = myPlayer.value
+  const oldPosition = player.position
   const newPosition = (player.position - roll + 36) % 36
+  console.log('Moving from position', oldPosition, 'to', newPosition)
   await gameStore.movePlayer(player.player_id, newPosition)
   
   // Check what space they landed on - find by position
+  console.log('boardSpaces.value:', boardSpaces.value)
+  console.log('boardSpacesStore.boardSpaces:', boardSpacesStore.boardSpaces)
   const landedSpace = boardSpaces.value ? boardSpaces.value.find(s => s.position === newPosition) : null
   
   console.log('Landed on position:', newPosition, 'Space:', landedSpace)
   
   if (landedSpace) {
     await handleLanding(landedSpace, player)
+  } else {
+    console.log('No space found at position:', newPosition)
+    await endTurn()
   }
   
   isRolling.value = false
   
-  // End turn after deal is done
-  await endTurn()
+  console.log('=== DICE ROLL END ===')
 }
 
 const handleLanding = async (space, player) => {
-  console.log('Handling landing on:', space.space_type, space.name)
+  console.log('=== HANDLE LANDING START ===')
+  console.log('Space:', space)
+  console.log('Player:', player)
+  console.log('Space type:', space.space_type)
+  console.log('Space name:', space.name)
+  console.log('Space space_id:', space.space_id)
+  
+  console.log('propertiesStore.properties:', propertiesStore.properties)
+  console.log('gameStore.propertyOwnership:', gameStore.propertyOwnership)
   
   if (space.space_type === 'property') {
-    // Check if property is owned
-    const ownership = gameStore.propertyOwnership.find(o => o.property_id === space.space_id)
+    console.log('This is a property space')
     
-    console.log('Ownership found:', ownership)
+    // Find the property record for this board space
+    const property = propertiesStore.properties.find(p => p.space_id === space.space_id)
+    console.log('Property found:', property)
+    
+    if (!property) {
+      console.log('No property record found for this space - ending turn')
+      await endTurn()
+      return
+    }
+    
+    console.log('Property details:', {
+      property_id: property.property_id,
+      name: property.name,
+      property_color: property.property_color,
+      base_price: property.base_price
+    })
+    
+    // Check if property is owned
+    const ownership = gameStore.propertyOwnership.find(o => o.property_id === property.property_id)
+    
+    console.log('Ownership check:', {
+      property_id: property.property_id,
+      ownership_found: !!ownership,
+      ownership: ownership
+    })
     
     if (!ownership) {
+      console.log('Property is unowned - showing purchase modal')
+      
       // Property is unowned - show purchase modal
+      // Map property fields to match modal expectations
       currentProperty.value = {
-        id: space.space_id,
-        name: space.name,
-        color: space.property_color || 'Gray',
-        price: space.base_price || 100,
-        rent: space.base_price * 0.1,
-        house_cost: space.base_price * 0.5,
-        hotel_cost: space.base_price,
-        mortgage_value: space.mortgage_value || space.base_price * 0.5
+        property_id: property.property_id,
+        name: property.name,
+        color: property.property_color,
+        price: property.base_price,
+        rent: property.base_rent,
+        house_cost: property.house_price,
+        hotel_cost: property.hotel_price,
+        mortgage_value: property.mortgage_value
       }
-      console.log('Showing purchase modal for:', currentProperty.value)
+      console.log('currentProperty.value set to:', currentProperty.value)
+      console.log('Setting showPurchaseModal to true')
       showPurchaseModal.value = true
+      console.log('showPurchaseModal.value after setting:', showPurchaseModal.value)
+      
+      // Don't end turn yet - wait for purchase decision
+      console.log('Returning without ending turn')
+      return
     } else if (ownership.player_id !== player.player_id) {
+      console.log('Property owned by another player - paying rent')
       // Property is owned by someone else - pay rent
-      const owner = gameStore.players.find(p => p.player_id === ownership.player_id)
-      if (owner) {
-        const rent = calculateRent(space, ownership)
-        await gameStore.payRent(gameStore.game.game_id, player.player_id, owner.player_id, rent, space.space_id)
+      try {
+        const owner = gameStore.players.find(p => p.player_id === ownership.player_id)
+        console.log('Owner found:', owner)
+        
+        if (owner) {
+          const rent = calculateRent(property, ownership)
+          console.log('Rent calculated:', rent)
+          
+          // Pay the rent
+          console.log('Calling payRent with:', {
+            gameId: gameStore.game.game_id,
+            fromPlayerId: player.player_id,
+            toPlayerId: owner.player_id,
+            rent: rent,
+            propertyId: property.property_id
+          })
+          
+          await gameStore.payRent(gameStore.game.game_id, player.player_id, owner.player_id, rent, property.property_id)
+          
+          console.log('Rent payment successful')
+          
+          // Show rent payment modal
+          rentOwner.value = owner
+          rentOwnership.value = ownership
+          rentAmount.value = rent
+          showRentModal.value = true
+          
+          // Don't end turn yet - wait for modal close
+          console.log('Returning without ending turn for rent modal')
+          return
+        } else {
+          console.error('Owner not found for player_id:', ownership.player_id)
+        }
+      } catch (err) {
+        console.error('Error during rent payment:', err)
+        console.error('Error details:', JSON.stringify(err, null, 2))
+        console.error('Error message:', err.message)
+        console.error('Error stack:', err.stack)
       }
+    } else {
+      console.log('Property owned by current player - no action needed')
     }
   } else if (space.space_type === 'chance' || space.space_type === 'uno') {
+    console.log('This is a chance/uno space')
     // Draw chance card
     currentChanceCard.value = drawRandomCard()
     showChanceModal.value = true
+    
+    // Don't end turn yet - wait for card action
+    console.log('Returning without ending turn for chance card')
+    return
+  } else {
+    console.log('Space type:', space.space_type, '- no special handling')
   }
+  
+  console.log('Ending turn')
+  await endTurn()
+  console.log('=== HANDLE LANDING END ===')
 }
 
 const calculateRent = (property, ownership) => {
-  // Simple rent calculation - can be enhanced
-  let rent = property.price * 0.1
+  console.log('Calculating rent for property:', property)
+  console.log('Ownership:', ownership)
+  
+  // Handle missing property data gracefully
+  if (!property) {
+    console.error('Property is null or undefined')
+    return 0
+  }
+  
+  if (!ownership) {
+    console.error('Ownership is null or undefined')
+    return 0
+  }
+  
+  // Get base rent with fallback
+  let rent = property.base_rent || property.base_price * 0.1 || 0
+  
+  // Calculate rent based on houses
   if (ownership.houses_count > 0) {
-    rent *= (1 + ownership.houses_count * 0.5)
+    const houseRentKey = `rent_${ownership.houses_count}_house`
+    rent = property[houseRentKey] || rent
   }
+  
+  // Calculate rent based on hotel
   if (ownership.has_hotel) {
-    rent *= 2
+    rent = property.rent_hotel || rent * 2
   }
+  
+  console.log('Calculated rent:', rent)
   return rent
 }
 
@@ -288,23 +427,54 @@ const drawRandomCard = () => {
 }
 
 const handlePurchase = async () => {
-  if (!currentProperty.value || !myPlayer.value) return
+  console.log('=== HANDLE PURCHASE START ===')
+  console.log('currentProperty.value:', currentProperty.value)
+  console.log('myPlayer.value:', myPlayer.value)
+  
+  if (!currentProperty.value || !myPlayer.value) {
+    console.log('Missing property or player data')
+    return
+  }
   
   try {
+    console.log('Calling purchaseProperty with:', {
+      game_id: gameStore.game.game_id,
+      property_id: currentProperty.value.property_id,
+      player_id: myPlayer.value.player_id,
+      price: currentProperty.value.price
+    })
+    
     await gameStore.purchaseProperty(
       gameStore.game.game_id,
-      currentProperty.value.id,
+      currentProperty.value.property_id,
       myPlayer.value.player_id,
       currentProperty.value.price
     )
+    
+    console.log('Purchase successful, closing modal')
     showPurchaseModal.value = false
+    console.log('showPurchaseModal.value after closing:', showPurchaseModal.value)
+    
+    console.log('Ending turn')
+    await endTurn()
+    console.log('Turn ended')
   } catch (err) {
     console.error('Purchase failed:', err)
   }
+  
+  console.log('=== HANDLE PURCHASE END ===')
 }
 
-const handlePass = () => {
+const handlePass = async () => {
+  console.log('=== HANDLE PASS START ===')
+  console.log('Closing modal')
   showPurchaseModal.value = false
+  console.log('showPurchaseModal.value after closing:', showPurchaseModal.value)
+  
+  console.log('Ending turn')
+  await endTurn()
+  console.log('Turn ended')
+  console.log('=== HANDLE PASS END ===')
 }
 
 const handleChanceCard = async () => {
@@ -315,6 +485,15 @@ const handleChanceCard = async () => {
   }
   
   showChanceModal.value = false
+  // End turn after handling chance card
+  await endTurn()
+}
+
+const handleRentModalClose = async () => {
+  console.log('Closing rent modal')
+  showRentModal.value = false
+  console.log('Ending turn after rent payment')
+  await endTurn()
 }
 
 const handleAuction = async (propertyId) => {
