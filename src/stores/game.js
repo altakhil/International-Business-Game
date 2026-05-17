@@ -347,8 +347,12 @@ export const useGameStore = defineStore('game', () => {
       // Log transaction
       await createTransaction(gameId, playerId, null, 'property_purchase', price, propertyId)
       
-      // Log event
-      await createGameEvent(gameId, playerId, 'property_purchase', { property_id: propertyId, price })
+      // Log event (optional - don't fail purchase if event creation fails)
+      try {
+        await createGameEvent(gameId, playerId, 'property_purchase', { property_id: propertyId, price })
+      } catch (eventErr) {
+        console.warn('Failed to create game event (non-critical):', eventErr)
+      }
       
       return data
     } catch (err) {
@@ -517,7 +521,13 @@ export const useGameStore = defineStore('game', () => {
     await updatePlayerMoney(toPlayerId, amount)
     
     await createTransaction(gameId, fromPlayerId, toPlayerId, 'rent_payment', amount, propertyId)
-    await createGameEvent(gameId, fromPlayerId, 'rent_paid', { to_player_id: toPlayerId, amount, property_id: propertyId })
+    
+    // Log event (optional - don't fail rent payment if event creation fails)
+    try {
+      await createGameEvent(gameId, fromPlayerId, 'rent_paid', { to_player_id: toPlayerId, amount, property_id: propertyId })
+    } catch (eventErr) {
+      console.warn('Failed to create game event (non-critical):', eventErr)
+    }
   }
 
   const fetchTransactions = async (gameId) => {
@@ -917,7 +927,7 @@ export const useGameStore = defineStore('game', () => {
 
   const calculateStartingMoney = (maxPlayers) => {
     // Scale starting money based on player count
-    const baseMoney = 1500
+    const baseMoney = 40000
     switch (maxPlayers) {
       case 2: return baseMoney * 1.5
       case 3: return baseMoney * 1.2
